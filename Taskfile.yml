@@ -1,0 +1,17 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+
+tasks:
+  run:
+    desc: run
+    cmds:
+      - go run main/main.go
+    silent: true
+  generate:
+    desc: generate test boilerplate code
+    cmds:
+      - go generate
