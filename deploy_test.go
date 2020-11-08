@@ -50,15 +50,15 @@ func TestPopulateData(t *testing.T) {
 
 	dataPre := map[string]cfd.CloudFormationResource{
 			"testcfn" : {
-				LogicalResourceId: "testfncn",
+				LogicalResourceID: "testfncn",
 				Type: "AWS::CloudFormation::Stack",
 			},
 			"MyTopic" : {
-				LogicalResourceId: "MyTopic",
+				LogicalResourceID: "MyTopic",
 				Type: "AWS::SNS::Topic",
 			},
 			"NotMyTopic" : {
-				LogicalResourceId: "NotMyTopic",
+				LogicalResourceID: "NotMyTopic",
 				Type: "AWS::SNS::Topic",
 			},
 	}
@@ -68,49 +68,114 @@ func TestPopulateData(t *testing.T) {
 	t2, _ := time.Parse(layoutAWS, "2020-11-06T10:55:49.190000+00:00");
 	t3, _ := time.Parse(layoutAWS, "2020-11-06T10:55:49.187000+00:00")
 	dataTarget1 := map[string]cfd.CloudFormationResource{
+		"testcfn" : {
+			LogicalResourceID: "testfncn",
+			PhysicalResourceID: "",
+			Status: "CREATE_IN_PROGRESS",
+			Type: "AWS::CloudFormation::Stack",
+			Timestamp: t1,
+		},
+		"MyTopic" : {
+			LogicalResourceID: "MyTopic",
+			Status: "CREATE_IN_PROGRESS",
+			Type: "AWS::SNS::Topic",
+			Timestamp: t2,
+		},
+		"NotMyTopic" : {
+			LogicalResourceID: "NotMyTopic",
+			Status: "CREATE_IN_PROGRESS",
+			Type: "AWS::SNS::Topic",
+			Timestamp: t3,
+		},
+	}
+	
+	t1, _ = time.Parse(layoutAWS, "2020-11-06T10:56:00.644000+00:00");
+	t2, _ = time.Parse(layoutAWS, "2020-11-06T10:55:59.605000+00:00");
+	t3, _ = time.Parse(layoutAWS, "2020-11-06T10:55:59.693000+00:00")
+	dataTarget2 := map[string]cfd.CloudFormationResource{
 			"testcfn" : {
-				LogicalResourceId: "testfncn",
-				PhysicalResourceId: "",
-				Status: "CREATE_IN_PROGRESS",
+				LogicalResourceID: "testfncn",
+				PhysicalResourceID: "",
+				Status: "CREATE_COMPLETE",
 				Type: "AWS::CloudFormation::Stack",
 				Timestamp: t1,
 			},
 			"MyTopic" : {
-				LogicalResourceId: "MyTopic",
-				Status: "CREATE_IN_PROGRESS",
+				LogicalResourceID: "MyTopic",
+				Status: "CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t2,
 			},
 			"NotMyTopic" : {
-				LogicalResourceId: "NotMyTopic",
-				Status: "CREATE_IN_PROGRESS",
+				LogicalResourceID: "NotMyTopic",
+				Status:"CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t3,
 			},
 	}
 
-	// dataTarget2 := map[string]cfd.CloudFormationResource{
-	// 		"testcfn" : {
-	// 			LogicalResourceId: "testfncn",
-	// 			PhysicalResourceId: "",
-	// 			Status: "CREATE_COMPLETE",
-	// 			Type: "AWS::CloudFormation::Stack",
-	// 		},
-	// 		"MyTopic" : {
-	// 			LogicalResourceId: "MyTopic",
-	// 			Status: "CREATE_COMPLETE",
-	// 			Type: "AWS::SNS::Topic",
-	// 		},
-	// 		"NotMyTopic" : {
-	// 			LogicalResourceId: "NotMyTopic",
-	// 			Status:"CREATE_COMPLETE",
-	// 			Type: "AWS::SNS::Topic",
-	// 		},
-	// }
-
 	data1 := cfd.PopulateData(mockedDeployInterface, "TestStack", dataPre);
 	assert.DeepEqual(t,dataTarget1, data1)
 
-	// data2 := cfd.PopulateData(mockedDeployInterface, "TestStack", data1);
-	// assert.DeepEqual(t,dataTarget2, data2)
+	data2 := cfd.PopulateData(mockedDeployInterface, "TestStack", data1);
+	assert.DeepEqual(t,dataTarget2, data2)
+}
+
+func TestIsStackCompleted(t *testing.T){
+// Timestamps from events1.json
+t1, _ := time.Parse(layoutAWS, "2020-11-06T10:55:46.074000+00:00");
+t2, _ := time.Parse(layoutAWS, "2020-11-06T10:55:49.190000+00:00");
+t3, _ := time.Parse(layoutAWS, "2020-11-06T10:55:49.187000+00:00")
+dataTarget1 := map[string]cfd.CloudFormationResource{
+	"testcfn" : {
+		LogicalResourceID: "testfncn",
+		PhysicalResourceID: "",
+		Status: "CREATE_IN_PROGRESS",
+		Type: "AWS::CloudFormation::Stack",
+		Timestamp: t1,
+	},
+	"MyTopic" : {
+		LogicalResourceID: "MyTopic",
+		Status: "CREATE_IN_PROGRESS",
+		Type: "AWS::SNS::Topic",
+		Timestamp: t2,
+	},
+	"NotMyTopic" : {
+		LogicalResourceID: "NotMyTopic",
+		Status: "CREATE_IN_PROGRESS",
+		Type: "AWS::SNS::Topic",
+		Timestamp: t3,
+	},
+}
+
+t1, _ = time.Parse(layoutAWS, "2020-11-06T10:56:00.644000+00:00");
+t2, _ = time.Parse(layoutAWS, "2020-11-06T10:55:59.605000+00:00");
+t3, _ = time.Parse(layoutAWS, "2020-11-06T10:55:59.693000+00:00")
+dataTarget2 := map[string]cfd.CloudFormationResource{
+		"testcfn" : {
+			LogicalResourceID: "testfncn",
+			PhysicalResourceID: "",
+			Status: "CREATE_COMPLETE",
+			Type: "AWS::CloudFormation::Stack",
+			Timestamp: t1,
+		},
+		"MyTopic" : {
+			LogicalResourceID: "MyTopic",
+			Status: "CREATE_COMPLETE",
+			Type: "AWS::SNS::Topic",
+			Timestamp: t2,
+		},
+		"NotMyTopic" : {
+			LogicalResourceID: "NotMyTopic",
+			Status:"CREATE_COMPLETE",
+			Type: "AWS::SNS::Topic",
+			Timestamp: t3,
+		},
+}	
+	complete1 := cfd.IsStackCompleted(dataTarget1);
+	assert.Equal(t,false, complete1)
+	
+	complete2 := cfd.IsStackCompleted(dataTarget2);
+	assert.Equal(t,true, complete2)
+	
 }

@@ -2,19 +2,31 @@ package cloudformationdeploy
 
 import (
 	"context"
-	cfn "github.com/aws/aws-sdk-go-v2/service/cloudformation"
 	"fmt"
-	"github.com/awslabs/goformation/v4/cloudformation"
 	"time"
-	"github.com/alexeyco/simpletable"
-	// tm "github.com/buger/goterm"
 
+	"github.com/alexeyco/simpletable"
+	cfn "github.com/aws/aws-sdk-go-v2/service/cloudformation"
+	"github.com/awslabs/goformation/v4/cloudformation"
+	tm "github.com/buger/goterm"
+)
+
+const CREATE_COMPLETE="CREATE_COMPLETE"
+const CREATE_IN_PROGRESS = "CREATE_IN_PROGRESS"
+
+const (
+	ColorDefault = "\x1b[39m"
+
+	ColorRed   = "\x1b[91m"
+	ColorGreen = "\x1b[32m"
+	ColorBlue  = "\x1b[94m"
+	ColorGray  = "\x1b[90m"
 )
 
 // CloudFormationResource holder for status
 type CloudFormationResource struct {
-	LogicalResourceId string
-	PhysicalResourceId string
+	LogicalResourceID string
+	PhysicalResourceID string
 	Status string
 	Type string
 	Timestamp time.Time
@@ -58,75 +70,68 @@ func DeleteStack(client DeployInterface,name string){
 // ShowStatus status of stack
 func ShowStatus(client DeployInterface, name string, template *cloudformation.Template){
 	
-	//maxRows := len(template.Resources)+1;
+	// Prepopulate
 	
     data := map[string]CloudFormationResource{}
-
-	table := simpletable.New()
-
-	table.Header = &simpletable.Header{
-		Cells: []*simpletable.Cell{
-			{Align: simpletable.AlignLeft, Text: "#"},
-			{Align: simpletable.AlignLeft, Text: "STATE"},
-			{Align: simpletable.AlignLeft, Text: "Logical"},
-			{Align: simpletable.AlignLeft, Text: "Type"},
-		},
-		
-	}
-
-
 	i := 1
 	for k, v := range template.Resources {
-		r := []*simpletable.Cell{
-			{Align: simpletable.AlignLeft, Text: fmt.Sprintf("%d", i)},
-			{Align: simpletable.AlignLeft, Text: "state"},
-			{Align: simpletable.AlignLeft, Text: k},
-			{Align: simpletable.AlignLeft, Text: v.AWSCloudFormationType()},
-		}
-		table.Body.Cells = append(table.Body.Cells, r)
 		i = i+1
 		item := &CloudFormationResource{
-			LogicalResourceId: k,
-			PhysicalResourceId: "",
+			LogicalResourceID: k,
+			PhysicalResourceID: "",
 			Status: "-",
 			Type: v.AWSCloudFormationType(),
 		}
 		data[k] = *item;
 	}
 	
-	// table.SetStyle(simpletable.StyleCompactClassic)
-	// tm.Clear()
-	// tm.MoveCursor(1,1)
+	// Draw
+	table := simpletable.New()
+	table.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{Align: simpletable.AlignLeft, Text: "ID"},
+			{Align: simpletable.AlignLeft, Text: "State"},
+			{Align: simpletable.AlignLeft, Text: "Type"},
+		},
+		
+	}
+	table.SetStyle(simpletable.StyleCompactLite)
+	
+	first := true
+	for !IsStackCompleted(data){
+		tm.Clear()
+		tm.MoveCursor(1,1)
+		data = PopulateData(client, name, data);
+		i = 0;
+		var statustext string
+		for id, v := range data {
+			if( v.Status == CREATE_COMPLETE){
+				statustext = green(CREATE_COMPLETE)
+			}else {		
+				statustext = gray(v.Status)
+			}
 
-	// tm.Println(table.String())
-	// tm.Flush()
-
-	i = 0;
-	for id, v := range template.Resources {
-		r := []*simpletable.Cell{
-			{Align: simpletable.AlignLeft, Text: fmt.Sprintf("%d", i)},
-			{Align: simpletable.AlignLeft, Text: data[id].Status},
-			{Align: simpletable.AlignLeft, Text: id},
-			{Align: simpletable.AlignLeft, Text: v.AWSCloudFormationType()},
+			r := []*simpletable.Cell{
+				{Align: simpletable.AlignLeft, Text: id},
+				{Align: simpletable.AlignLeft, Text: statustext},
+				{Align: simpletable.AlignLeft, Text: v.Type},
+			}
+			if !first {
+				table.Body.Cells[i]=r
+			}else{
+				table.Body.Cells = append(table.Body.Cells, r)
+			}
+			i = i+1;
 		}
-		table.Body.Cells = append(table.Body.Cells, r)
-		i = i+1;
+		first = false
+		tm.Println(table.String())
+		tm.Flush()
+		time.Sleep(1 * time.Second) 
 	}
-	// tm.Clear()
-	// tm.MoveCursor(1,1)
-	// tm.Println(table.String())
-	// tm.Flush()
 	
-	doEvery(2000*time.Millisecond,client,name,template, table,data)
 	
 }
 
-func doEvery(d time.Duration, client DeployInterface, name string,template  *cloudformation.Template, table *simpletable.Table, data map[string]CloudFormationResource) {
-	for range time.Tick(d) {
-		PopulateData(client, name, data)
-	}
-
-}
 
 // PopulateData update status from describe call
 func PopulateData(client DeployInterface, name string,data map[string]CloudFormationResource)( map[string]CloudFormationResource){
@@ -154,4 +159,30 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 	}
 	return data;
 
+}
+
+// IsStackCompleted check for everything "completed"
+func IsStackCompleted(data map[string]CloudFormationResource) bool {
+	for _, value := range data {
+		if(value.Status != "CREATE_COMPLETE"){
+			return false
+		}
+	}
+	return true;
+}
+
+func red(s string) string {
+	return fmt.Sprintf("%s%s%s", ColorRed, s, ColorDefault)
+}
+
+func green(s string) string {
+	return fmt.Sprintf("%s%s%s", ColorGreen, s, ColorDefault)
+}
+
+func blue(s string) string {
+	return fmt.Sprintf("%s%s%s", ColorBlue, s, ColorDefault)
+}
+
+func gray(s string) string {
+	return fmt.Sprintf("%s%s%s", ColorGray, s, ColorDefault)
 }
