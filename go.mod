@@ -10,5 +10,6 @@ require (
 	github.com/buger/goterm v0.0.0-20200322175922-2f3e71b85129
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/thatisuday/clapper v1.0.10
 	gotest.tools v2.2.0+incompatible
 )

@@ -3,6 +3,8 @@ package cloudformationdeploy
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/alexeyco/simpletable"
@@ -11,15 +13,23 @@ import (
 	tm "github.com/buger/goterm"
 )
 
-const CREATE_COMPLETE="CREATE_COMPLETE"
-const CREATE_IN_PROGRESS = "CREATE_IN_PROGRESS"
+// StatusCreateComplete CloudFormation Status
+const StatusCreateComplete="CREATE_COMPLETE"
+// StatusCreateInProgress CloudFormation Status
+const StatusCreateInProgress = "CREATE_IN_PROGRESS"
+// StatusDeleteComplete CloudFormation Status
+const StatusDeleteComplete = "DELETE_COMPLETE"
 
 const (
+	// ColorDefault default color
 	ColorDefault = "\x1b[39m"
-
+	// ColorRed red for screen
 	ColorRed   = "\x1b[91m"
+	// ColorGreen green for screen
 	ColorGreen = "\x1b[32m"
+	// ColorBlue blue for screen
 	ColorBlue  = "\x1b[94m"
+	// ColorGray for screen
 	ColorGray  = "\x1b[90m"
 )
 
@@ -68,7 +78,7 @@ func DeleteStack(client DeployInterface,name string){
 
 
 // ShowStatus status of stack
-func ShowStatus(client DeployInterface, name string, template *cloudformation.Template){
+func ShowStatus(client DeployInterface, name string, template *cloudformation.Template, endState string){
 	
 	// Prepopulate
 	
@@ -92,22 +102,25 @@ func ShowStatus(client DeployInterface, name string, template *cloudformation.Te
 			{Align: simpletable.AlignLeft, Text: "ID"},
 			{Align: simpletable.AlignLeft, Text: "State"},
 			{Align: simpletable.AlignLeft, Text: "Type"},
+			{Align: simpletable.AlignLeft, Text: "PhysicalResourceID"},
 		},
 		
 	}
 	table.SetStyle(simpletable.StyleCompactLite)
 	
 	first := true
-	for !IsStackCompleted(data){
+	for !IsStackCompleted(data,endState){
 		tm.Clear()
 		tm.MoveCursor(1,1)
 		data = PopulateData(client, name, data);
 		i = 0;
 		var statustext string
 		for id, v := range data {
-			if( v.Status == CREATE_COMPLETE){
-				statustext = green(CREATE_COMPLETE)
-			}else {		
+			if( v.Status == StatusCreateComplete){
+				statustext = green(StatusCreateComplete)
+			}else if v.Status == StatusDeleteComplete {
+				statustext = red(StatusDeleteComplete)
+			} else{		
 				statustext = gray(v.Status)
 			}
 
@@ -115,6 +128,7 @@ func ShowStatus(client DeployInterface, name string, template *cloudformation.Te
 				{Align: simpletable.AlignLeft, Text: id},
 				{Align: simpletable.AlignLeft, Text: statustext},
 				{Align: simpletable.AlignLeft, Text: v.Type},
+				{Align: simpletable.AlignLeft, Text: v.PhysicalResourceID},
 			}
 			if !first {
 				table.Body.Cells[i]=r
@@ -140,6 +154,12 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 	}
 	output, error := client.DescribeStackEvents(context.TODO(), params)
 	if( error != nil){
+		msg  := error.Error()
+		if strings.Contains(msg, "does not exist"){
+			fmt.Println("Stack <",name,"> does not exist");
+			os.Exit(0);
+		}
+
 		panic(error)
 	}
 
@@ -152,6 +172,8 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 		if( event.Timestamp.After(item.Timestamp) ){
 			item.Status = string(event.ResourceStatus);
 			item.Timestamp = *event.Timestamp;
+			item.PhysicalResourceID = *event.PhysicalResourceId
+			item.Type = *event.ResourceType
 			data[*event.LogicalResourceId] = item;
 			
 		}
@@ -162,9 +184,9 @@ func PopulateData(client DeployInterface, name string,data map[string]CloudForma
 }
 
 // IsStackCompleted check for everything "completed"
-func IsStackCompleted(data map[string]CloudFormationResource) bool {
+func IsStackCompleted(data map[string]CloudFormationResource, endState string) bool {
 	for _, value := range data {
-		if(value.Status != "CREATE_COMPLETE"){
+		if(value.Status != endState){
 			return false
 		}
 	}

@@ -70,19 +70,21 @@ func TestPopulateData(t *testing.T) {
 	dataTarget1 := map[string]cfd.CloudFormationResource{
 		"testcfn" : {
 			LogicalResourceID: "testfncn",
-			PhysicalResourceID: "",
+			PhysicalResourceID: "arn:aws:cloudformation:eu-central-1:795048271754:stack/testcfn/9f675870-201e-11eb-a9a9-06cc4e94edaa",
 			Status: "CREATE_IN_PROGRESS",
 			Type: "AWS::CloudFormation::Stack",
 			Timestamp: t1,
 		},
 		"MyTopic" : {
 			LogicalResourceID: "MyTopic",
+			PhysicalResourceID: "arn:aws:sns:eu-central-1:795048271754:my-topic-1604660145",
 			Status: "CREATE_IN_PROGRESS",
 			Type: "AWS::SNS::Topic",
 			Timestamp: t2,
 		},
 		"NotMyTopic" : {
 			LogicalResourceID: "NotMyTopic",
+			PhysicalResourceID: "arn:aws:sns:eu-central-1:795048271754:my-topic2-1604660145",
 			Status: "CREATE_IN_PROGRESS",
 			Type: "AWS::SNS::Topic",
 			Timestamp: t3,
@@ -95,19 +97,21 @@ func TestPopulateData(t *testing.T) {
 	dataTarget2 := map[string]cfd.CloudFormationResource{
 			"testcfn" : {
 				LogicalResourceID: "testfncn",
-				PhysicalResourceID: "",
+				PhysicalResourceID: "arn:aws:cloudformation:eu-central-1:795048271754:stack/testcfn/9f675870-201e-11eb-a9a9-06cc4e94edaa",
 				Status: "CREATE_COMPLETE",
 				Type: "AWS::CloudFormation::Stack",
 				Timestamp: t1,
 			},
 			"MyTopic" : {
 				LogicalResourceID: "MyTopic",
+				PhysicalResourceID: "arn:aws:sns:eu-central-1:795048271754:my-topic-1604660145",
 				Status: "CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t2,
 			},
 			"NotMyTopic" : {
 				LogicalResourceID: "NotMyTopic",
+				PhysicalResourceID: "arn:aws:sns:eu-central-1:795048271754:my-topic2-1604660145",
 				Status:"CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t3,
@@ -172,10 +176,10 @@ dataTarget2 := map[string]cfd.CloudFormationResource{
 			Timestamp: t3,
 		},
 }	
-	complete1 := cfd.IsStackCompleted(dataTarget1);
+	complete1 := cfd.IsStackCompleted(dataTarget1, "CREATE_COMPLETE");
 	assert.Equal(t,false, complete1)
 	
-	complete2 := cfd.IsStackCompleted(dataTarget2);
+	complete2 := cfd.IsStackCompleted(dataTarget2,"CREATE_COMPLETE");
 	assert.Equal(t,true, complete2)
 	
 }
