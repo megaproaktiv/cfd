@@ -27,7 +27,17 @@ func main() {
 		TopicName: "my-topic2-" + strconv.FormatInt(time.Now().Unix(), 10),
 	}
 
-	//fmt.Print(len(template.Resources))
+	
+	template.Resources["Topic4"] = &sns.Topic{
+		TopicName: "my-topic4-" + strconv.FormatInt(time.Now().Unix(), 10),
+	}
+
+	
+	template.Resources["Topic5"] = &sns.Topic{
+		TopicName: "my-topic5" + strconv.FormatInt(time.Now().Unix(), 10),
+	}
+
+	
 
 
 	cfg, err := config.LoadDefaultConfig(config.WithRegion("eu-central-1"))
