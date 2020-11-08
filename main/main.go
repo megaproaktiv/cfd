@@ -1,7 +1,7 @@
 package main
 
 import (
-	// "fmt"
+	// ~"fmt"
 	"strconv"
 	"time"
 	"cloudformationdeploy"
@@ -39,5 +39,7 @@ func main() {
 	const stackname = "testcfn"
 	cloudformationdeploy.CreateStack(client,stackname, template)
 
-	cloudformationdeploy.ShowStatus(client,stackname);
+	cloudformationdeploy.ShowStatus(client,stackname,template);
+
+	cloudformationdeploy.DeleteStack(client,stackname);
 }

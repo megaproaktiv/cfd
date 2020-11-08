@@ -22,6 +22,12 @@ var _ DeployInterface = &DeployInterfaceMock{}
 //             CreateStackFunc: func(ctx context.Context, params *cloudformation.CreateStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.CreateStackOutput, error) {
 // 	               panic("mock out the CreateStack method")
 //             },
+//             DeleteStackFunc: func(ctx context.Context, params *cloudformation.DeleteStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DeleteStackOutput, error) {
+// 	               panic("mock out the DeleteStack method")
+//             },
+//             DescribeStackEventsFunc: func(ctx context.Context, params *cloudformation.DescribeStackEventsInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error) {
+// 	               panic("mock out the DescribeStackEvents method")
+//             },
 //         }
 //
 //         // use mockedDeployInterface in code that requires DeployInterface
@@ -31,6 +37,12 @@ var _ DeployInterface = &DeployInterfaceMock{}
 type DeployInterfaceMock struct {
 	// CreateStackFunc mocks the CreateStack method.
 	CreateStackFunc func(ctx context.Context, params *cloudformation.CreateStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.CreateStackOutput, error)
+
+	// DeleteStackFunc mocks the DeleteStack method.
+	DeleteStackFunc func(ctx context.Context, params *cloudformation.DeleteStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DeleteStackOutput, error)
+
+	// DescribeStackEventsFunc mocks the DescribeStackEvents method.
+	DescribeStackEventsFunc func(ctx context.Context, params *cloudformation.DescribeStackEventsInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -43,8 +55,28 @@ type DeployInterfaceMock struct {
 			// OptFns is the optFns argument value.
 			OptFns []func(*cloudformation.Options)
 		}
+		// DeleteStack holds details about calls to the DeleteStack method.
+		DeleteStack []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Params is the params argument value.
+			Params *cloudformation.DeleteStackInput
+			// OptFns is the optFns argument value.
+			OptFns []func(*cloudformation.Options)
+		}
+		// DescribeStackEvents holds details about calls to the DescribeStackEvents method.
+		DescribeStackEvents []struct {
+			// Ctx is the ctx argument value.
+			Ctx context.Context
+			// Params is the params argument value.
+			Params *cloudformation.DescribeStackEventsInput
+			// OptFns is the optFns argument value.
+			OptFns []func(*cloudformation.Options)
+		}
 	}
-	lockCreateStack sync.RWMutex
+	lockCreateStack         sync.RWMutex
+	lockDeleteStack         sync.RWMutex
+	lockDescribeStackEvents sync.RWMutex
 }
 
 // CreateStack calls CreateStackFunc.
@@ -83,5 +115,83 @@ func (mock *DeployInterfaceMock) CreateStackCalls() []struct {
 	mock.lockCreateStack.RLock()
 	calls = mock.calls.CreateStack
 	mock.lockCreateStack.RUnlock()
+	return calls
+}
+
+// DeleteStack calls DeleteStackFunc.
+func (mock *DeployInterfaceMock) DeleteStack(ctx context.Context, params *cloudformation.DeleteStackInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DeleteStackOutput, error) {
+	if mock.DeleteStackFunc == nil {
+		panic("DeployInterfaceMock.DeleteStackFunc: method is nil but DeployInterface.DeleteStack was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Params *cloudformation.DeleteStackInput
+		OptFns []func(*cloudformation.Options)
+	}{
+		Ctx:    ctx,
+		Params: params,
+		OptFns: optFns,
+	}
+	mock.lockDeleteStack.Lock()
+	mock.calls.DeleteStack = append(mock.calls.DeleteStack, callInfo)
+	mock.lockDeleteStack.Unlock()
+	return mock.DeleteStackFunc(ctx, params, optFns...)
+}
+
+// DeleteStackCalls gets all the calls that were made to DeleteStack.
+// Check the length with:
+//     len(mockedDeployInterface.DeleteStackCalls())
+func (mock *DeployInterfaceMock) DeleteStackCalls() []struct {
+	Ctx    context.Context
+	Params *cloudformation.DeleteStackInput
+	OptFns []func(*cloudformation.Options)
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Params *cloudformation.DeleteStackInput
+		OptFns []func(*cloudformation.Options)
+	}
+	mock.lockDeleteStack.RLock()
+	calls = mock.calls.DeleteStack
+	mock.lockDeleteStack.RUnlock()
+	return calls
+}
+
+// DescribeStackEvents calls DescribeStackEventsFunc.
+func (mock *DeployInterfaceMock) DescribeStackEvents(ctx context.Context, params *cloudformation.DescribeStackEventsInput, optFns ...func(*cloudformation.Options)) (*cloudformation.DescribeStackEventsOutput, error) {
+	if mock.DescribeStackEventsFunc == nil {
+		panic("DeployInterfaceMock.DescribeStackEventsFunc: method is nil but DeployInterface.DescribeStackEvents was just called")
+	}
+	callInfo := struct {
+		Ctx    context.Context
+		Params *cloudformation.DescribeStackEventsInput
+		OptFns []func(*cloudformation.Options)
+	}{
+		Ctx:    ctx,
+		Params: params,
+		OptFns: optFns,
+	}
+	mock.lockDescribeStackEvents.Lock()
+	mock.calls.DescribeStackEvents = append(mock.calls.DescribeStackEvents, callInfo)
+	mock.lockDescribeStackEvents.Unlock()
+	return mock.DescribeStackEventsFunc(ctx, params, optFns...)
+}
+
+// DescribeStackEventsCalls gets all the calls that were made to DescribeStackEvents.
+// Check the length with:
+//     len(mockedDeployInterface.DescribeStackEventsCalls())
+func (mock *DeployInterfaceMock) DescribeStackEventsCalls() []struct {
+	Ctx    context.Context
+	Params *cloudformation.DescribeStackEventsInput
+	OptFns []func(*cloudformation.Options)
+} {
+	var calls []struct {
+		Ctx    context.Context
+		Params *cloudformation.DescribeStackEventsInput
+		OptFns []func(*cloudformation.Options)
+	}
+	mock.lockDescribeStackEvents.RLock()
+	calls = mock.calls.DescribeStackEvents
+	mock.lockDescribeStackEvents.RUnlock()
 	return calls
 }
