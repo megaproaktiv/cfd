@@ -1,55 +1,85 @@
 package main
 
 import (
-	// ~"fmt"
-	"strconv"
-	"time"
-	"cloudformationdeploy"
-	"github.com/aws/aws-sdk-go-v2/config"
-	cfnservice "github.com/aws/aws-sdk-go-v2/service/cloudformation"
-	"github.com/awslabs/goformation/v4/cloudformation"
-	"github.com/awslabs/goformation/v4/cloudformation/sns"
-
-
+	// go 
+	"fmt"
+	"os"
+	// own
+	cfd "cloudformationdeploy"
+	// utils
+	"github.com/thatisuday/clapper"
 )
 
 func main() {
 
-	// Create a new CloudFormation template
-	template := cloudformation.NewTemplate()
+	const cmdDestroyString = "destroy"
+	const cmdDeployString = "deploy"
+	const cmdStatusString = "status"
+	const cmdShowString = "show"
+	const cmdHelpString = "help"
 
-	// Create an Amazon SNS topic, with a unique name based off the current timestamp
-	template.Resources["MyTopic"] = &sns.Topic{
-		TopicName: "my-topic-" + strconv.FormatInt(time.Now().Unix(), 10),
-	}
-
-	template.Resources["NotMyTopic"] = &sns.Topic{
-		TopicName: "my-topic2-" + strconv.FormatInt(time.Now().Unix(), 10),
-	}
-
+	// Look for commands
+	registry := clapper.NewRegistry()
+	registry.Register(cmdDeployString)
+	registry.Register(cmdDestroyString)
+	registry.Register(cmdStatusString)
+	registry.Register(cmdShowString)
+	registry.Register(cmdHelpString)
 	
-	template.Resources["Topic4"] = &sns.Topic{
-		TopicName: "my-topic4-" + strconv.FormatInt(time.Now().Unix(), 10),
+	// parse command-line arguments
+	command, err := registry.Parse(os.Args[1:])
+
+	// check for command line error
+	if err != nil {
+		fmt.Printf("error => %#v\n", err)
+		help()
+		return
 	}
 
+	// no command
+	if( len(command.Name) == 0 ) {
+		help()
+		os.Exit(1)
+	}
+	cmd := command.Name;
 	
-	template.Resources["Topic5"] = &sns.Topic{
-		TopicName: "my-topic5" + strconv.FormatInt(time.Now().Unix(), 10),
+	// create aws config & CloudFormation client
+	client := cfd.Client()
+	
+	const stackname = "demotemplate"
+	template := cfd.CreateTemplate(stackname);
+	
+
+	if cmd == cmdDeployString {
+		// Create a new CloudFormation template	
+		cfd.CreateStack(client,stackname, template)
+		cfd.ShowStatus(client,stackname,template,cfd.StatusCreateComplete);
+	}
+	
+	if cmd == cmdDestroyString {
+		cfd.DeleteStack(client,stackname)
+		cfd.ShowStatus(client,stackname,template,cfd.StatusDeleteComplete);
+	}
+	
+	if cmd == cmdStatusString {
+		cfd.ShowStatus(client,stackname,template,cfd.StatusCreateComplete);
 	}
 
-	
+	if cmd == cmdShowString {
+		y,_ := template.YAML()
+		fmt.Println(string(y));
+	}
 
 
-	cfg, err := config.LoadDefaultConfig(config.WithRegion("eu-central-1"))
-    if err != nil {
-        panic("unable to load SDK config, " + err.Error())
-	}	
-	client := cfnservice.NewFromConfig(cfg);
+	if cmd == cmdHelpString {
+		help();
+		os.Exit(0);
+	}
 
-	const stackname = "testcfn"
-	cloudformationdeploy.CreateStack(client,stackname, template)
+}
 
-	cloudformationdeploy.ShowStatus(client,stackname,template);
-
-	cloudformationdeploy.DeleteStack(client,stackname);
+func help(){
+	fmt.Println("CloudFormation deploy app. ")
+	fmt.Println("CloudFormation Template is generated automatically.")
+	fmt.Println("Please call with [deploy|destroy|status|show|help] . ")
 }

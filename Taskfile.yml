@@ -15,3 +15,16 @@ tasks:
     desc: generate test boilerplate code
     cmds:
       - go generate
+
+
+  build-linux:
+    desc: "Building go for linux"
+    cmds:
+      - env GOOS=linux go build -ldflags="-s -w" -o dist/linux/main main/main.go
+    silent: true
+
+  build:
+    desc: "Building go"
+    cmds:
+      - go build -ldflags="-s -w" -o dist/cfd main/main.go
+    silent: true      
