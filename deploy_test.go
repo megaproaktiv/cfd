@@ -97,21 +97,21 @@ func TestPopulateData(t *testing.T) {
 	dataTarget2 := map[string]cfd.CloudFormationResource{
 			"testcfn" : {
 				LogicalResourceID: "testfncn",
-				PhysicalResourceID: "arn:aws:cloudformation:eu-central-1:795048271754:stack/testcfn/9f675870-201e-11eb-a9a9-06cc4e94edaa",
+				PhysicalResourceID: "arn:aws:cloudformation:eu-central-1:012345678912:stack/testcfn/9f675870-201e-11eb-a9a9-06cc4e94edaa",
 				Status: "CREATE_COMPLETE",
 				Type: "AWS::CloudFormation::Stack",
 				Timestamp: t1,
 			},
 			"MyTopic" : {
 				LogicalResourceID: "MyTopic",
-				PhysicalResourceID: "arn:aws:sns:eu-central-1:795048271754:my-topic-1604660145",
+				PhysicalResourceID: "arn:aws:sns:eu-central-1:012345678912:my-topic-1604660145",
 				Status: "CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t2,
 			},
 			"NotMyTopic" : {
 				LogicalResourceID: "NotMyTopic",
-				PhysicalResourceID: "arn:aws:sns:eu-central-1:795048271754:my-topic2-1604660145",
+				PhysicalResourceID: "arn:aws:sns:eu-central-1:012345678912:my-topic2-1604660145",
 				Status:"CREATE_COMPLETE",
 				Type: "AWS::SNS::Topic",
 				Timestamp: t3,
